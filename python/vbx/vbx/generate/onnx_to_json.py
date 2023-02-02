@@ -317,7 +317,8 @@ def mxp_remove_nop_identity(network):
                 next_layer = network['layers'][n]
                 prev_layers = [p for p, prev in enumerate(network['layers']) if next_layer['input_id'] == prev['output_id']]
                 if len(prev_layers) == 1 and next_layer['op_type'] not in ['Gemm']:
-                    nop_pairs.append((l, n))
+                    if next_layer['op_type'] not in ['Conv'] or (next_layer['input_shape'][-2:] != (1,1)  and tuple(next_layer['kernel_shape'][-2:]) != (1,1)):
+                        nop_pairs.append((l, n))
 
     for l, n in nop_pairs:
         nop_layer = network['layers'][l]
@@ -923,44 +924,45 @@ def generate_mxp_graph(model_name, activations, stats, first_node_name, last_nod
         elif node.op_type == "Reshape":
             dims = get_tensor(inits, node.input[1])
 
-            if len(dims) == 4 and dims[-1] == 2:
-                idx += 6
-                node = nodes[idx]
-                output_id = node.output[0]
-                _, output_shapes = get_shapes(activations, stats, node)
-                output_shape = output_shapes[0]
-                channels, m, n = shape3d(output_shape)
-                reorg_layer = {
-                        'op_type': "Reorg",
-                        'name': node.name,
-                        'use_replay': 0,
-                        'input_size': int(sum([np.prod(s) for s in input_shapes])),
-                        'output_size': int(np.prod(output_shape)),
-                        'input_shape':input_shapes[0],
-                        'output_shape': output_shape,
-                        'input_id': input_id,
-                        'output_id': output_id,
-                        'input_description': input_id,
-                        'output_description': output_id,
-                        'channels': channels,
-                        'm': m,
-                        'n': n,
-                        'dma_offset': 0,
-                        'input_buffer_offset': input_buffer_offset,
-                        'output_buffer_offset': 0,
-                        "sublayers": [],
-                        "stride": int(dims[-1]),
-                        }
-                network['layers'].append(reorg_layer)
-            else:
-                previous['output_id'] = output_id
-                previous['output_description'] = output_id
-                output_shape = output_shapes[0]
-                channels, m, n = shape3d(output_shape)
-                if previous['output_shape'] != output_shape:
-                    if previous['n'] == 1 and m == 1 and previous['channels'] == channels:
-                        previous['m'] = m
-                        previous['n'] = n
+            # if len(dims) == 4 and dims[-1] == 2:
+            #     # PREVIOUSLY 6 SET TO 3 as it appears to work!
+            #     idx += 3
+            #     node = nodes[idx]
+            #     output_id = node.output[0]
+            #     _, output_shapes = get_shapes(activations, stats, node)
+            #     output_shape = output_shapes[0]
+            #     channels, m, n = shape3d(output_shape)
+            #     reorg_layer = {
+            #             'op_type': "Reorg",
+            #             'name': node.name,
+            #             'use_replay': 0,
+            #             'input_size': int(sum([np.prod(s) for s in input_shapes])),
+            #             'output_size': int(np.prod(output_shape)),
+            #             'input_shape':input_shapes[0],
+            #             'output_shape': output_shape,
+            #             'input_id': input_id,
+            #             'output_id': output_id,
+            #             'input_description': input_id,
+            #             'output_description': output_id,
+            #             'channels': channels,
+            #             'm': m,
+            #             'n': n,
+            #             'dma_offset': 0,
+            #             'input_buffer_offset': input_buffer_offset,
+            #             'output_buffer_offset': 0,
+            #             "sublayers": [],
+            #             "stride": int(dims[-1]),
+            #             }
+            #     network['layers'].append(reorg_layer)
+            # else:
+            previous['output_id'] = output_id
+            previous['output_description'] = output_id
+            output_shape = output_shapes[0]
+            channels, m, n = shape3d(output_shape)
+            if previous['output_shape'] != output_shape:
+                if previous['n'] == 1 and m == 1 and previous['channels'] == channels:
+                    previous['m'] = m
+                    previous['n'] = n
 
         elif node.op_type in ["Flatten",'Cast']:
             previous['output_id'] = output_id

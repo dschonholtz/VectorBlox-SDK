@@ -190,11 +190,15 @@ def vnnx_run_input(args):
     vnnx_input = []
     for input_id, iname in zip(input_ids, inames):
         if input_id == 0:
+            print("scale", input_scale, " datatype: ", input_dtype)
             vnnx_input += vnnx_load_input(input, input_shape, input_scale, input_dtype)
         else:
+            # print('loading input: ' + iname)
             with open(iname, 'rb') as f:
                 vnnx_input.append(np.load(f))
-
+    # print('about to run model with input:' + str(vnnx_input))
+    # convert each numpy array in the vnnx_input list to int8
+    vnnx_input = [np.array(x, dtype=np.int8) for x in vnnx_input]
     vnnx_arr = vnnx_model.run(vnnx_input)[0]
     with open(oname, 'wb') as f:
         np.save(f, vnnx_arr)

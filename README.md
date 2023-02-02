@@ -1,6 +1,16 @@
+# Notes about this fork.
+This is a fork for the Northeastern Wines Lab: https://ece.northeastern.edu/wineslab/
+
+It is designed to enable using the polarFire board, libero and generate hex files for microchip's libero software with ubuntu 22.04 and 1d Convolutional neural networks.
+
+- Converts a conv-1d model into the conv-2d model format that the polarfire software expects. This allows us to run the optimization software on the given h5 tensorflow model.
+
+- We are currently working on supporting inference of models.
+
+
 # Prerequisites
 
- Ubuntu 16.04 / 18.04 / 20.04 are supported
+ Ubuntu 16.04 / 18.04 / 20.04 /22.04 are supported
  If using WSL, ensure you are running from your home directory or have permissions set
 
 # Downloading the SDK

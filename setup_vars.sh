@@ -1,6 +1,7 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 function install_venv() {
+	# install virtualenv tools before trying to make one
     $PYTHON_EXE -m venv  $SCRIPTDIR/vbx_env
     source $SCRIPTDIR/vbx_env/bin/activate
 
